@@ -5,6 +5,8 @@ HireLens is an AI-based Applicant Tracking System (ATS) that analyzes resumes ag
 
 ## Features
 
+- HIRELENS FEATURES
+  
 - 📄 **Resume Analysis**
    Provides strengths, weaknesses, and improvement suggestions based on job description.
   
