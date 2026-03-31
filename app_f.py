@@ -322,11 +322,27 @@ active = st.session_state.get("active_tool", "")
 # ═══════════════════════════════════════════════════════════════════════════
 @st.cache_data(show_spinner=False)
 def input_pdf_setup(file_bytes: bytes):
-    poppler_path = r"C:\Users\Rachita\Desktop\poppler\poppler-25.12.0\Library\bin"
-    images = pdf2image.convert_from_bytes(file_bytes, poppler_path=poppler_path)
+    import pdf2image
+    import io, base64, os
+
+    # Windows (local)
+    if os.name == "nt":
+        poppler_path = r"C:\Users\Rachita\Desktop\poppler\poppler-25.12.0\Library\bin"
+        images = pdf2image.convert_from_bytes(
+            file_bytes,
+            poppler_path=poppler_path
+        )
+    # Linux / AWS
+    else:
+        images = pdf2image.convert_from_bytes(file_bytes)
+
     buf = io.BytesIO()
     images[0].save(buf, format="JPEG")
-    return [{"mime_type": "image/jpeg", "data": base64.b64encode(buf.getvalue()).decode()}]
+
+    return [{
+        "mime_type": "image/jpeg",
+        "data": base64.b64encode(buf.getvalue()).decode()
+    }]
 
 @st.cache_data(show_spinner=False)
 def gemini_text(system_prompt: str, pdf_parts: list, jd: str) -> str:
