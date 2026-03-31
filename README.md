@@ -8,16 +8,23 @@ HireLens is an AI-based Applicant Tracking System (ATS) that analyzes resumes ag
 
 - 📄 **Resume Analysis**
    Provides strengths, weaknesses, and improvement suggestions based on job description.
+
+  
 -🔑 **Keyword Optimization**
   Identifies missing keywords required to improve ATS performance.
+  
 -📊 **Percentage Match Score**
   Calculates resume-job match percentage with actionable feedback.
+  
 -✍️ **AI Resume Rewriter**
   Enhances resume content using AI to make it more impactful and ATS-friendly.
+  
 -🎯 **Skill Matching**
   Compares required skills with existing skills and highlights gaps.
+  
 -❓ **Interview Question Generator**
   Generates top 20 job-specific interview questions.
+  
 -📈 **Visual Analyzer**
   Displays resume insights using multiple interactive charts.
 
