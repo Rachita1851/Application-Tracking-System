@@ -6,8 +6,7 @@ import io
 import json
 import base64
 import plotly.graph_objects as go
-import google.generativeai as genai
-
+import google.generativeai as genai  
 # ── Gemini ──────────────────────────────────────────────────────────────────
 genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
 model = genai.GenerativeModel("gemini-2.5-flash")
@@ -26,7 +25,7 @@ st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap');
 
-html, body, [class*="css"], .stApp {
+html, body, [class*="css"], .stApp {gemini-2.5-flash
     font-family: 'DM Sans', sans-serif !important;
     background-color: #0c0c0e !important;
     color: #e8e4d8 !important;
@@ -322,27 +321,11 @@ active = st.session_state.get("active_tool", "")
 # ═══════════════════════════════════════════════════════════════════════════
 @st.cache_data(show_spinner=False)
 def input_pdf_setup(file_bytes: bytes):
-    import pdf2image
-    import io, base64, os
-
-    # Windows (local)
-    if os.name == "nt":
-        poppler_path = r"C:\Users\Rachita\Desktop\poppler\poppler-25.12.0\Library\bin"
-        images = pdf2image.convert_from_bytes(
-            file_bytes,
-            poppler_path=poppler_path
-        )
-    # Linux / AWS
-    else:
-        images = pdf2image.convert_from_bytes(file_bytes)
-
+    poppler_path = r"C:\Users\Rachita\Desktop\poppler\poppler-25.12.0\Library\bin"
+    images = pdf2image.convert_from_bytes(file_bytes, poppler_path=poppler_path)
     buf = io.BytesIO()
     images[0].save(buf, format="JPEG")
-
-    return [{
-        "mime_type": "image/jpeg",
-        "data": base64.b64encode(buf.getvalue()).decode()
-    }]
+    return [{"mime_type": "image/jpeg", "data": base64.b64encode(buf.getvalue()).decode()}]
 
 @st.cache_data(show_spinner=False)
 def gemini_text(system_prompt: str, pdf_parts: list, jd: str) -> str:
@@ -351,10 +334,22 @@ def gemini_text(system_prompt: str, pdf_parts: list, jd: str) -> str:
 
 @st.cache_data(show_spinner=False)
 def gemini_json(system_prompt: str, pdf_parts: list, jd: str):
-    r = model.generate_content([system_prompt, pdf_parts[0], jd])
-    raw = re.sub(r"^```[a-z]*\n?", "", r.text.strip())
-    raw = re.sub(r"\n?```$", "", raw)
-    return json.loads(raw)
+    for attempt in range(3):
+        try:
+            r = model.generate_content([system_prompt, pdf_parts[0], jd])
+            raw = r.text.strip()
+            raw = re.sub(r"^```[a-z]*\n?", "", raw)
+            raw = re.sub(r"\n?```$", "", raw)
+            start = raw.find("{")
+            end   = raw.rfind("}") + 1
+            if start != -1 and end > start:
+                raw = raw[start:end]
+            return json.loads(raw)
+        except json.JSONDecodeError:
+            if attempt == 2:
+                st.error("⚠️ AI returned invalid JSON after 3 attempts. Please try again.")
+                return {}
+    return {}
 
 def check_inputs():
     if st.session_state.resume_bytes is None:
@@ -413,9 +408,9 @@ PROMPT_PERCENTAGE = """
 You are a skilled ATS scanner. Evaluate the resume against the job description.
 Respond ONLY with valid JSON — no markdown fences, no extra text:
 {
-  "match_percentage": 74,
-  "missing_keywords": ["Jenkins","CircleCI","Azure","PowerShell","communication","documentation"],
-  "existing_skills": ["Python","Docker","Kubernetes","AWS","GCP","CI/CD","Bash","Linux","Git"],
+  "match_percentage": [".."],
+  "missing_keywords": ["...,"...","...","..,"..",".."],
+  "existing_skills": ["..","..","..","..",".."],
   "final_thoughts": "Your resume presents a strong foundational match. To further enhance alignment, add keywords related to documentation and soft skills."
 }
 Base ALL values on the actual resume and JD provided.
@@ -433,12 +428,12 @@ Rewrite the entire resume to be ATS-optimised for the provided job description.
 
 PROMPT_SKILL_MATCH = """
 You are a career coach and ATS expert. Analyse the resume against the job description.
-Score each resume section out of 10. Give improvement tips and 15-20 interview questions.
+Score each resume section out of 10. Specially check properly every section of resume (specially summary ,education ,project and experience section before giving score) analyze the content written , judge the educations based on 12th pass, undergraduate , masters and PHD. Also understand carefully the experience and projects done , specially education ,project and experience section before giving score and displaying output. Give improvement tips and 20-30 interview questions inluding scenario based questions.
 Respond ONLY with valid JSON — no markdown fences:
 {
-  "scores": {"Summary":7,"Skills":6,"Experience":8,"Projects":5,"Education":7},
-  "improvement_tips": ["tip1","tip2"],
-  "interview_questions": ["Q1?","Q2?"]
+  "scores": {"Summary":,"Skills":,"Experience":,"Projects":,"Education":},
+  "improvement_tips": ["tip1","tip2","tip3","tip4","tip5"],
+  "interview_questions": ["Q1?","Q2?","Q3?","Q4?","Q5?","Q6?","Q7?","Q8?","Q9?","Q10?","Q11?","Q12?","Q13?","Q14?","Q15?","Q16?","Q17?","Q18?","Q19?","Q20?"]
 }
 """
 
@@ -446,13 +441,13 @@ PROMPT_VISUAL = """
 You are an ATS and resume expert. Analyse the resume against the job description.
 Respond ONLY with valid JSON — no markdown fences:
 {
-  "missing_skills": [{"skill":"Python","gap_pct":80},{"skill":"SQL","gap_pct":55}],
-  "ats_breakdown": {"Keyword Match":35,"Skills Match":22,"Experience Match":18,"Education Match":8,"Formatting":9},
+  "missing_skills": [{"skill":"","gap_pct":},{"skill":"","gap_pct":}],
+  "ats_breakdown": {"Keyword Match":,"Skills Match":,"Experience Match":,"Education Match":,"Formatting":},
   "ats_summary": "One to two sentence summary of ATS performance.",
-  "readability": {"score":72,"avg_sentence_length":18,"action_verbs_used":12,"passive_voice_pct":14},
-  "job_role_compatibility": [{"role":"Data Engineer","score":82},{"role":"Backend Developer","score":65}],
-  "skill_category_distribution": {"Programming":38,"Data Analysis":25,"Machine Learning":17,"Tools & Platforms":20},
-  "learning_path": [{"item":"Learn SQL","priority":90},{"item":"Learn Power BI","priority":72}]
+  "readability": {"score":,"avg_sentence_length":,"action_verbs_used":,"passive_voice_pct":},
+  "job_role_compatibility": [{"role":"Data Engineer","score":},{"role":"Backend Developer","score":},{"role":"Data Analyst","score":}],
+  "skill_category_distribution": {"Programming":,"Data Analysis":,"Machine Learning":,"Tools & Platforms":},
+  "learning_path": [{"item":"...","priority":},{"item":"Learn Power BI","priority":}]
 }
 Base ALL values on the actual resume and JD — do not use placeholder numbers.
 """
@@ -501,6 +496,10 @@ elif active == "percentage-match":
                 data = gemini_json(PROMPT_PERCENTAGE, pdf, jd_input)
 
             pct_val        = data.get("match_percentage", 0)
+            # Add this conversion:
+            if isinstance(pct_val, list):
+                  pct_val = pct_val[0] if pct_val else 0
+            pct_val = int(str(pct_val).replace("%", "").strip())
             missing_kws    = data.get("missing_keywords", [])
             existing_skills= data.get("existing_skills", [])
             final_thoughts = data.get("final_thoughts", "")
